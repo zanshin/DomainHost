@@ -17,6 +17,7 @@ class DomainHost
   def initialize(bookmarkFile)
     @bookmarks = bookmarkFile
     @counter = 1
+    @http_schemes = ["http", "https"]
   end
   
   def resolve_domains
@@ -24,15 +25,12 @@ class DomainHost
     	file = File.new(@bookmarks, "r")
     	while (line = file.gets)
     		# extract the URL
-    		aUrl = URI.extract(line)
-    		unless (aUrl =~ URI::regexp).nil?
-    		  # Valid URL
-    		  unless aUrl.empty?
-    		    theUrl = URI.parse(aUrl.to_s)
-    		    domain = theUrl.host
-    		    puts "#{@counter}: #{domain}"
-    		    @counter = @counter + 1
-    		  end
+    		aUrl = line.slice(URI.regexp(@http_schemes))
+    		unless aUrl.nil?
+  		    theUrl = URI.parse(aUrl.to_s)
+  		    domain = theUrl.host
+  		    puts "#{@counter}: #{domain}"
+  		    @counter = @counter + 1
     		end
     	end
     	file.close
