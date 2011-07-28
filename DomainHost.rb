@@ -18,6 +18,7 @@ class DomainHost
     @bookmarks = bookmarkFile
     @counter = 1
     @http_schemes = ["http", "https"]
+    @domains = Hash.new { |h, k| h[k] = 0 }
   end
   
   def resolve_domains
@@ -31,12 +32,22 @@ class DomainHost
   		    domain = theUrl.host
   		    puts "#{@counter}: #{domain}"
   		    @counter = @counter + 1
+  		    
+  		    # put the domains into a Hash, which has the effect of eliminating duplicate
+  		    @domains[domain] += 1
     		end
     	end
     	file.close
     rescue => err
     	puts "Exception: #{err}"
     	err
+    end
+  end
+  
+  def whois_lookup
+    domains_in_order = Hash[@domains.sort]
+    domains_in_order.each do | domain, count |
+      puts "The domain #{domain} has #{count} instances."
     end
   end
 
@@ -47,5 +58,6 @@ end
 # -------------------------------------------------
 hosts = DomainHost.new("chromeBookmarks.html")
 hosts.resolve_domains
+hosts.whois_lookup
 
 
