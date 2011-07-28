@@ -1,0 +1,4 @@
+DomainHost is a ruby version of HostedBy.
+
+This application parses an HTML Bookmarks file and produces a list of the domain hosts used by
+the domains contained in the file. 
