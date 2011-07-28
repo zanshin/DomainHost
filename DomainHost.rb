@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-
 #
 # DomainHost.rb
 #
@@ -11,24 +10,30 @@
 require "uri"
 
 # -------------------------------------------------
-# DomainHost is our main
+# DomainHost class
 # -------------------------------------------------
 class DomainHost
-  counter = 1
-  def read_bookmarks(bookmarks)
+  
+  def initialize(bookmarkFile)
+    @bookmarks = bookmarkFile
+    @counter = 1
+  end
+  
+  def resolve_domains
     begin
-    	file = File.new(bookmarks, "r")
+    	file = File.new(@bookmarks, "r")
     	while (line = file.gets)
-    		#puts "#{counter}: #{line}"
-		
     		# extract the URL
     		aUrl = URI.extract(line)
-    		puts aUrl
-    		#theUrl = URI.parse(aUrl.to_s)
-    		#domain = theUrl.host 
-    		validate_url(aUrl)
-    		#puts "#{counter}: #{domain}"
-    		counter = counter + 1
+    		unless (aUrl =~ URI::regexp).nil?
+    		  # Valid URL
+    		  unless aUrl.empty?
+    		    theUrl = URI.parse(aUrl.to_s)
+    		    domain = theUrl.host
+    		    puts "#{@counter}: #{domain}"
+    		    @counter = @counter + 1
+    		  end
+    		end
     	end
     	file.close
     rescue => err
@@ -37,21 +42,12 @@ class DomainHost
     end
   end
 
-  # -------------------------------------------------
-  # validate_url looks for a valid URL
-  # -------------------------------------------------
-  def validate_url(url)
-    uri = URI.parse(url)
-    uri.class != URI::HTTP
-  rescue URI::InvalidURIError
-    false
-  end
-
 end
   
-  # -------------------------------------------------
-  # call read_bookmarks with a file
-  # -------------------------------------------------
-  read_bookmarks("chromeBookmarks")
+# -------------------------------------------------
+# Instantiate DomainHost and feed it a bookmarks file
+# -------------------------------------------------
+hosts = DomainHost.new("chromeBookmarks.html")
+hosts.resolve_domains
 
 
