@@ -34,12 +34,12 @@ class DomainHost
     		# extract the URL
     		aUrl = line.slice(URI.regexp(@http_schemes))
     		unless aUrl.nil?
-    		  domain = URI.parse(aUrl.to_s).host.gsub(/^www\./, '')
+    		  domain = clean_domain(URI.parse(aUrl.to_s).host.gsub(/^www\./, ''))
   		    puts "#{@counter}: #{domain}"
   		    @counter = @counter + 1
   		    
   		    # put the domains into a Hash, which has the effect of eliminating duplicates
-  		    @domains[domain] += 1
+  		    @domains[domain.to_s] += 1
     		end
     	end
     	file.close
@@ -53,11 +53,11 @@ class DomainHost
     client = Whois::Client.new(:timeout => 20)
     @domains_in_order.each do | domain, count |
       begin
-        result = client.query(domain)        
         puts "Querying whois for #{domain}."
+        result = client.query(domain)        
         unless result.nameservers.nil?
           result.nameservers.each do |nameserver|
-            @hosts[nameserver] += 1
+            @hosts[clean_domain(nameserver.to_s)] += 1
           end
         end
         
@@ -67,14 +67,19 @@ class DomainHost
         puts "Whois::ResponseIsThrottled... #{domain}"
       rescue Timeout::Error
         puts "Timeout::Error... #{domain}"
-      rescue NoMethodError
-        puts "NoMethodError.... #{domain}"
-      rescue Exception
-        puts "Exception.... #{domain}"
+      #rescue NoMethodError
+       # puts "NoMethodError.... #{domain}"
+      #rescue Exception
+       # puts "Exception.... #{domain}"
       end
     end
   end
   
+  def clean_domain(crufty_domain)
+    # split the incoming domain string on the periods (.) and build a non-crufty string
+    domain_split = crufty_domain.split(".")
+    return (domain_split[domain_split.size - 2] + "." + domain_split[domain_split.size - 1])
+  end
   
   def domain_display
     # sort alphabetically and display
@@ -102,7 +107,7 @@ end
 # -------------------------------------------------
 # Instantiate DomainHost and feed it a bookmarks file
 # -------------------------------------------------
-hosts = DomainHost.new("chromeBookmarks.html")
+hosts = DomainHost.new("bookmarks_test.html")
 hosts.resolve_domains
 hosts.domain_display
 hosts.whois_lookup
