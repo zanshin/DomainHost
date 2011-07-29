@@ -52,12 +52,14 @@ class DomainHost
   def whois_lookup
     client = Whois::Client.new(:timeout => 20)
     @domains_in_order.each do | domain, count |
+      not_first_time = false
       begin
         puts "Querying whois for #{domain}."
         result = client.query(domain)        
         unless result.nameservers.nil?
           result.nameservers.each do |nameserver|
-            @hosts[clean_domain(nameserver.to_s)] += 1
+            @hosts[clean_domain(nameserver.to_s)] += 1 unless not_first_time
+            not_first_time = true
           end
         end
         
@@ -67,10 +69,10 @@ class DomainHost
         puts "Whois::ResponseIsThrottled... #{domain}"
       rescue Timeout::Error
         puts "Timeout::Error... #{domain}"
-      #rescue NoMethodError
-       # puts "NoMethodError.... #{domain}"
-      #rescue Exception
-       # puts "Exception.... #{domain}"
+      rescue NoMethodError
+        puts "NoMethodError.... #{domain}"
+      rescue Exception
+        puts "Exception.... #{domain}"
       end
     end
   end
@@ -91,23 +93,18 @@ class DomainHost
     end
   end
   
-  
   def host_display
-    # sort in descending order of nameserver popularity and dislay
-    @counter = 1
-    #hosts_in_order = Hash[@hosts.sort]
-    @hosts.each do | nameserver, count |
-      puts "#{@counter}: The nameserver #{nameserver} is used " + pluralize(count, "time") + "."
-      @counter = @counter + 1
-    end
+    # sort in ascending order of nameserver popularity and display
+    @hosts.sort{ | nameserver, count | count[1] <=> nameserver[1]}.each { |element| 
+      puts "There were " + pluralize(element[1], "instance") + " of #{element[0]}." }
   end
-
 end
   
 # -------------------------------------------------
 # Instantiate DomainHost and feed it a bookmarks file
 # -------------------------------------------------
-hosts = DomainHost.new("bookmarks_test.html")
+hosts = DomainHost.new("chromeBookmarks.html")
+#hosts = DomainHost.new("bookmarks_test.html")
 hosts.resolve_domains
 hosts.domain_display
 hosts.whois_lookup
