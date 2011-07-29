@@ -1,1 +1,1 @@
-rvm usr 1.9.3-head@DomainHost
+rvm use 1.9.3-head

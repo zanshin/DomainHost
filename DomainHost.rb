@@ -8,6 +8,10 @@
 #
 
 require "uri"
+require "action_view"
+include ActionView::Helpers::TextHelper
+
+require "whois"
 
 # -------------------------------------------------
 # DomainHost class
@@ -19,6 +23,8 @@ class DomainHost
     @counter = 1
     @http_schemes = ["http", "https"]
     @domains = Hash.new { |h, k| h[k] = 0 }
+    @domains_in_order = Hash.new
+    @hosts = Hash.new { |h, k| h[k] = 0 }
   end
   
   def resolve_domains
@@ -28,12 +34,11 @@ class DomainHost
     		# extract the URL
     		aUrl = line.slice(URI.regexp(@http_schemes))
     		unless aUrl.nil?
-  		    theUrl = URI.parse(aUrl.to_s)
-  		    domain = theUrl.host
+    		  domain = URI.parse(aUrl.to_s).host.gsub(/^www\./, '')
   		    puts "#{@counter}: #{domain}"
   		    @counter = @counter + 1
   		    
-  		    # put the domains into a Hash, which has the effect of eliminating duplicate
+  		    # put the domains into a Hash, which has the effect of eliminating duplicates
   		    @domains[domain] += 1
     		end
     	end
@@ -43,11 +48,52 @@ class DomainHost
     	err
     end
   end
-  
+    
   def whois_lookup
-    domains_in_order = Hash[@domains.sort]
-    domains_in_order.each do | domain, count |
-      puts "The domain #{domain} has #{count} instances."
+    client = Whois::Client.new(:timeout => 20)
+    @domains_in_order.each do | domain, count |
+      begin
+        result = client.query(domain)        
+        puts "Querying whois for #{domain}."
+        unless result.nameservers.nil?
+          result.nameservers.each do |nameserver|
+            @hosts[nameserver] += 1
+          end
+        end
+        
+      rescue Whois::ConnectionError
+        puts "Whois::ConnectionError... #{domain}"
+      rescue Whois::ResponseIsThrottled
+        puts "Whois::ResponseIsThrottled... #{domain}"
+      rescue Timeout::Error
+        puts "Timeout::Error... #{domain}"
+      rescue NoMethodError
+        puts "NoMethodError.... #{domain}"
+      rescue Exception
+        puts "Exception.... #{domain}"
+      end
+    end
+  end
+  
+  
+  def domain_display
+    # sort alphabetically and display
+    @counter = 1
+    @domains_in_order = Hash[@domains.sort]
+    @domains_in_order.each do | domain, count |
+      puts "#{@counter}: The domain #{domain} has " + pluralize(count, "instance") + "."
+      @counter = @counter + 1
+    end
+  end
+  
+  
+  def host_display
+    # sort in descending order of nameserver popularity and dislay
+    @counter = 1
+    #hosts_in_order = Hash[@hosts.sort]
+    @hosts.each do | nameserver, count |
+      puts "#{@counter}: The nameserver #{nameserver} is used " + pluralize(count, "time") + "."
+      @counter = @counter + 1
     end
   end
 
@@ -58,6 +104,8 @@ end
 # -------------------------------------------------
 hosts = DomainHost.new("chromeBookmarks.html")
 hosts.resolve_domains
+hosts.domain_display
 hosts.whois_lookup
+hosts.host_display
 
 
