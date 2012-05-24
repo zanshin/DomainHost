@@ -2,9 +2,10 @@
 #
 # DomainHost.rb
 #
-# This application parses a Netscape fomatted bookmarks file and produces a list of the domain
-# hosts used by the domain contained in the file. Each domain is only counted once, regardless of
-# how many times it or derevations of it occur in the file.
+# This application parses a Netscape fomatted bookmarks file and produces a 
+# list of the domain hosts used by the domain contained in the file. Each 
+# domain is only counted once, regardless of how many times it or derevations 
+# of it occur in the file.
 #
 
 require "uri"
@@ -80,7 +81,7 @@ class DomainHost
   def clean_domain(crufty_domain)
     # split the incoming domain string on the periods (.) and build a non-crufty string
     domain_split = crufty_domain.split(".")
-    return (domain_split[domain_split.size - 2] + "." + domain_split[domain_split.size - 1])
+    return (domain_split[domain_split.size - 2] + "." + domain_split[domain_split.size - 1]).downcase
   end
   
   def domain_display
@@ -103,7 +104,8 @@ end
 # -------------------------------------------------
 # Instantiate DomainHost and feed it a bookmarks file
 # -------------------------------------------------
-hosts = DomainHost.new("chromeBookmarks.html")
+#hosts = DomainHost.new("chromeBookmarks.html")
+hosts = DomainHost.new("bookmarks_5_23_12.html")
 #hosts = DomainHost.new("bookmarks_test.html")
 hosts.resolve_domains
 hosts.domain_display
